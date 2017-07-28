@@ -6,7 +6,7 @@ data "template_file" "user_data" {
     db_username = "${var.db_username}"
     db_password = "${var.db_password}"
     db_host = "${aws_db_instance.wp_rds.endpoint}"
-    site_url = "${var.dns_name}"
+    site_url = "${aws_elb.wp_elb.dns_name}"
     site_title = "${var.site_title}"
     site_admin_name = "${var.admin_user}"
     site_admin_password = "${var.admin_password}"
@@ -50,6 +50,57 @@ resource "aws_security_group" "wp_instance_security_group" {
 
 }
 
+resource "aws_iam_instance_profile" "wp_iam_profile" {
+  name  = "wordpress_instance_profile"
+  role = "${aws_iam_role.wp_iam_role.name}"
+}
+
+resource "aws_iam_role" "wp_iam_role" {
+  name = "wordpress_iam_role"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "wp_iam_policy" {
+  name = "wordpress_iam_policy"
+  role = "${aws_iam_role.wp_iam_role.id}"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket"],
+      "Resource": ["arn:aws:s3:::${var.bucket_name}"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": ["arn:aws:s3:::${var.bucket_name}/*"]
+    }
+  ]
+}
+EOF
+}
+
 resource "aws_launch_configuration" "wp_launch_configuration" {
   name_prefix   = "wp-instance-"
   image_id      = "ami-a4c7edb2"
@@ -58,6 +109,7 @@ resource "aws_launch_configuration" "wp_launch_configuration" {
   security_groups = ["${aws_security_group.wp_instance_security_group.id}"]
   associate_public_ip_address = false
   user_data = "${data.template_file.user_data.rendered}"
+  iam_instance_profile = "${aws_iam_instance_profile.wp_iam_profile.name}"
 
   root_block_device {
     volume_size = "50"
@@ -70,7 +122,6 @@ resource "aws_launch_configuration" "wp_launch_configuration" {
 }
 
 resource "aws_autoscaling_group" "wp_autoscaling_group" {
-  availability_zones        = ["${var.az_a}", "${var.az_b}"]
   name                      = "WordPress Autoscaling Group"
   max_size                  = 5
   min_size                  = 1
@@ -83,7 +134,7 @@ resource "aws_autoscaling_group" "wp_autoscaling_group" {
   vpc_zone_identifier       = ["${aws_subnet.wp_private_subnet_a.id}", "${aws_subnet.wp_private_subnet_b.id}"]
 
   tag {
-    key                 = "owner"
+    key                 = "Owner"
     value               = "${var.owner}"
     propagate_at_launch = true
   }
@@ -154,10 +205,38 @@ resource "aws_cloudwatch_metric_alarm" "wp_memory_low" {
     }
 }
 
+resource "aws_security_group" "wp_elb_security_group" {
+  name        = "WordPress ELB Security Group"
+  description = "WordPress ELB  Group"
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16", "${var.elb_outbound_ip}"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16", "${var.elb_outbound_ip}"]
+  }
+
+  egress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    cidr_blocks     = ["0.0.0.0/0"]
+  }
+
+  vpc_id = "${aws_vpc.wp_vpc.id}"
+}
 
 resource "aws_elb" "wp_elb" {
   name               = "wp-elb"
-  availability_zones = ["${var.az_a}", "${var.az_b}"]
+  subnets            = ["${aws_subnet.wp_public_subnet_a.id}", "${aws_subnet.wp_public_subnet_b.id}"]
+  security_groups    = ["${aws_security_group.wp_elb_security_group.id}"]
 
   listener {
     instance_port     = 80
@@ -188,7 +267,7 @@ resource "aws_elb" "wp_elb" {
 }
 
 resource "aws_lb_cookie_stickiness_policy" "wp_lb_stickiness" {
-  name                     = "wp_stickness_policy"
+  name                     = "wp-stickness-policy"
   load_balancer            = "${aws_elb.wp_elb.id}"
   lb_port                  = 80
   cookie_expiration_period = 3600

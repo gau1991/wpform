@@ -53,10 +53,6 @@ variable "site_title" {
   default = "My WordPress site"
 }
 
-variable "dns_name" {
-  description = "DNS Name for WordPress setup"
-}
-
 variable "owner" {
   description = "Value of owner tag to set"
 }
@@ -71,4 +67,12 @@ variable "environment" {
 
 variable "key_name" {
   description = "SSH Key Name for access"
+}
+
+variable "elb_outbound_ip" {
+  description = "Outbound IP for ELB"
+}
+
+variable "bucket_name" {
+  description = "S3 Bucket Name"
 }

@@ -20,7 +20,7 @@ resource "aws_security_group" "wp_db_security_group" {
 }
 
 resource "aws_db_subnet_group" "wp_db_subnet_group" {
-  name       = "main"
+  name       = "wp-subnet-group"
   subnet_ids = ["${aws_subnet.wp_db_subnet_a.id}", "${aws_subnet.wp_db_subnet_b.id}"]
 
   tags {
@@ -41,6 +41,7 @@ resource "aws_db_instance" "wp_rds" {
   multi_az = true
   publicly_accessible = false
   db_subnet_group_name = "${aws_db_subnet_group.wp_db_subnet_group.name}"
+  skip_final_snapshot = true
 
   tags {
     Name        = "wp_database_server"
