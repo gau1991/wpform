@@ -21,11 +21,6 @@ variable "az_b" {
   default     = "us-east-1b"
 }
 
-variable "db_name" {
-  description = "Database Name"
-  default     = "wordpress"
-}
-
 variable "db_username" {
   description = "Database User Name"
   default     = "root"
@@ -33,12 +28,6 @@ variable "db_username" {
 
 variable "db_password" {
   description = "Database Password"
-  default     = "root123"
-}
-
-variable "db_name" {
-  description = "Database Name"
-  default     = "wordpress"
 }
 
 variable "db_name" {
@@ -52,6 +41,7 @@ variable "admin_email" {
 
 variable "admin_user" {
   description = "Admin user for WordPress setup"
+  default = "admin"
 }
 
 variable "admin_password" {
@@ -60,6 +50,7 @@ variable "admin_password" {
 
 variable "site_title" {
   description = "Site Title for WordPress setup"
+  default = "My WordPress site"
 }
 
 variable "dns_name" {
@@ -68,6 +59,14 @@ variable "dns_name" {
 
 variable "owner" {
   description = "Value of owner tag to set"
+}
+
+variable "project" {
+  description = "Value of project tag to set"
+}
+
+variable "environment" {
+  description = "Value of environment tag to set"
 }
 
 variable "key_name" {

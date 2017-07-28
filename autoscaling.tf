@@ -51,17 +51,16 @@ resource "aws_security_group" "wp_instance_security_group" {
 }
 
 resource "aws_launch_configuration" "wp_launch_configuration" {
-  name = "WordPress Launch Configuration"
   name_prefix   = "wp-instance-"
   image_id      = "ami-a4c7edb2"
   instance_type = "t2.medium"
   key_name = "${var.key_name}"
-  security_groups = ["${aws_security_group.wp_instance_security_group}"]
+  security_groups = ["${aws_security_group.wp_instance_security_group.id}"]
   associate_public_ip_address = false
   user_data = "${data.template_file.user_data.rendered}"
 
   root_block_device {
-    volume_size = "50G"
+    volume_size = "50"
     volume_type = "gp2"
   }
 
@@ -95,8 +94,8 @@ resource "aws_autoscaling_group" "wp_autoscaling_group" {
   }
 
   tag {
-    key                 = "Product"
-    value               = "${var.product}"
+    key                 = "Project"
+    value               = "${var.project}"
     propagate_at_launch = true
   }
 

@@ -1,3 +1,11 @@
+resource "aws_eip" "aws_eip_a" {
+  vpc      = true
+}
+
+resource "aws_eip" "aws_eip_b" {
+  vpc      = true
+}
+
 resource "aws_vpc" "wp_vpc" {
   cidr_block       = "10.0.0.0/16"
   instance_tenancy = "dedicated"
@@ -12,13 +20,13 @@ resource "aws_internet_gateway" "wp_igw" {
 }
 
 resource "aws_nat_gateway" "wp_ngw_a" {
-  allocation_id = "${aws_eip.nat.id}"
+  allocation_id = "${aws_eip.aws_eip_a.id}"
   subnet_id     = "${aws_subnet.wp_public_subnet_a.id}"
   depends_on = ["aws_internet_gateway.wp_igw"]
 }
 
 resource "aws_nat_gateway" "wp_ngw_b" {
-  allocation_id = "${aws_eip.nat.id}"
+  allocation_id = "${aws_eip.aws_eip_b.id}"
   subnet_id     = "${aws_subnet.wp_public_subnet_b.id}"
   depends_on = ["aws_internet_gateway.wp_igw"]
 }
@@ -41,7 +49,7 @@ resource "aws_route_table" "wp_private_route_table_a" {
 
   route {
     cidr_block = "0.0.0.0/0"
-    nat_gateway_id = "${aws_internet_gateway.wp_ngw_a.id}"
+    nat_gateway_id = "${aws_nat_gateway.wp_ngw_a.id}"
   }
 
   tags {
@@ -54,7 +62,7 @@ resource "aws_route_table" "wp_private_route_table_b" {
 
   route {
     cidr_block = "0.0.0.0/0"
-    nat_gateway_id = "${aws_internet_gateway.wp_ngw_b.id}"
+    nat_gateway_id = "${aws_nat_gateway.wp_ngw_b.id}"
   }
 
   tags {
