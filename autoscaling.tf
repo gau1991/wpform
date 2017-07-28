@@ -80,6 +80,7 @@ resource "aws_autoscaling_group" "wp_autoscaling_group" {
   force_delete              = true
   launch_configuration      = "${aws_launch_configuration.wp_launch_configuration.name}"
   min_elb_capacity          = 1
+  vpc_zone_identifier       = ["${aws_subnet.wp_private_subnet_a.id}", "${aws_subnet.wp_private_subnet_b.id}"]
 
   tag {
     key                 = "owner"
@@ -151,4 +152,44 @@ resource "aws_cloudwatch_metric_alarm" "wp_memory_low" {
     dimensions {
         AutoScalingGroupName = "${aws_autoscaling_group.wp_autoscaling_group.name}"
     }
+}
+
+
+resource "aws_elb" "wp_elb" {
+  name               = "wp-elb"
+  availability_zones = ["${var.az_a}", "${var.az_b}"]
+
+  listener {
+    instance_port     = 80
+    instance_protocol = "http"
+    lb_port           = 80
+    lb_protocol       = "http"
+  }
+
+  health_check {
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 3
+    target              = "HTTP:80/"
+    interval            = 30
+  }
+
+  cross_zone_load_balancing   = true
+  idle_timeout                = 400
+  connection_draining         = true
+  connection_draining_timeout = 500
+
+  tags {
+    Name        = "wp_database_server"
+    Owner       = "${var.owner}"
+    Project     = "${var.project}"
+    Environment = "${var.environment}"
+  }
+}
+
+resource "aws_lb_cookie_stickiness_policy" "wp_lb_stickiness" {
+  name                     = "wp_stickness_policy"
+  load_balancer            = "${aws_elb.wp_elb.id}"
+  lb_port                  = 80
+  cookie_expiration_period = 3600
 }

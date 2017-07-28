@@ -43,7 +43,7 @@ resource "aws_db_instance" "wp_rds" {
   db_subnet_group_name = "${aws_db_subnet_group.wp_db_subnet_group.name}"
 
   tags {
-    Name        = "DatabaseServer"
+    Name        = "wp_database_server"
     Owner       = "${var.owner}"
     Project     = "${var.project}"
     Environment = "${var.environment}"
