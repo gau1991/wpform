@@ -106,10 +106,28 @@ resource "aws_subnet" "wp_private_subnet_b" {
   }
 }
 
-resource "aws_route_table_association" "a" {
-  subnet_id      = "${aws_subnet.foo.id}"
-  route_table_id = "${aws_route_table.bar.id}"
+resource "aws_subnet" "wp_db_subnet_a" {
+  vpc_id     = "${aws_vpc.wp_vpc.id}"
+  cidr_block = "10.0.5.0/24"
+  availability_zone = "${var.az_a}"
+  map_public_ip_on_launch = false
+
+  tags {
+    Name = "WordPress DB Subnet A"
+  }
 }
+
+resource "aws_subnet" "wp_db_subnet_b" {
+  vpc_id     = "${aws_vpc.wp_vpc.id}"
+  cidr_block = "10.0.6.0/24"
+  availability_zone = "${var.az_b}"
+  map_public_ip_on_launch = false
+
+  tags {
+    Name = "WordPress DB Subnet B"
+  }
+}
+
 
 resource "aws_route_table_association" "wp_public_subnet_association_a" {
   subnet_id      = "${aws_subnet.wp_public_subnet_a.id}"
@@ -132,12 +150,12 @@ resource "aws_route_table_association" "wp_private_subnet_association_b" {
   route_table_id = "${aws_route_table.wp_private_route_table_b.id}"
 }
 
-resource "aws_route_table_association" "a" {
-  subnet_id      = "${aws_subnet.foo.id}"
-  route_table_id = "${aws_route_table.bar.id}"
+resource "aws_route_table_association" "wp_db_subnet_association_a" {
+  subnet_id      = "${aws_subnet.wp_db_subnet_a.id}"
+  route_table_id = "${aws_route_table.wp_private_route_table_a.id}"
 }
 
-resource "aws_route_table_association" "a" {
-  subnet_id      = "${aws_subnet.foo.id}"
-  route_table_id = "${aws_route_table.bar.id}"
+resource "aws_route_table_association" "wp_db_subnet_association_b" {
+  subnet_id      = "${aws_subnet.wp_db_subnet_b.id}"
+  route_table_id = "${aws_route_table.wp_private_route_table_b.id}"
 }
