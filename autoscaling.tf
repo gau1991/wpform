@@ -53,7 +53,7 @@ resource "aws_security_group" "wp_instance_security_group" {
 resource "aws_launch_configuration" "wp_launch_configuration" {
   name_prefix   = "wp-instance-"
   image_id      = "ami-6df1e514"
-  instance_type = "t2.medium"
+  instance_type = "t2.small"
   key_name = "${var.key_name}"
   security_groups = ["${aws_security_group.wp_instance_security_group.id}"]
   associate_public_ip_address = false
@@ -80,6 +80,7 @@ resource "aws_autoscaling_group" "wp_autoscaling_group" {
   launch_configuration      = "${aws_launch_configuration.wp_launch_configuration.name}"
   min_elb_capacity          = 1
   vpc_zone_identifier       = ["${aws_subnet.wp_private_subnet_a.id}", "${aws_subnet.wp_private_subnet_b.id}"]
+  load_balancers            = ["${aws_elb.wp_elb.name}"]
 
   tag {
     key                 = "Owner"
