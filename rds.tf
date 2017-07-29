@@ -49,4 +49,7 @@ resource "aws_db_instance" "wp_rds" {
     Project     = "${var.project}"
     Environment = "${var.environment}"
   }
+
+  depends_on = ["aws_subnet.wp_db_subnet_a", "aws_subnet.wp_db_subnet_b"]
+
 }

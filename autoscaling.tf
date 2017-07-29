@@ -50,66 +50,14 @@ resource "aws_security_group" "wp_instance_security_group" {
 
 }
 
-resource "aws_iam_instance_profile" "wp_iam_profile" {
-  name  = "wordpress_instance_profile"
-  role = "${aws_iam_role.wp_iam_role.name}"
-}
-
-resource "aws_iam_role" "wp_iam_role" {
-  name = "wordpress_iam_role"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "ec2.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_iam_role_policy" "wp_iam_policy" {
-  name = "wordpress_iam_policy"
-  role = "${aws_iam_role.wp_iam_role.id}"
-
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": ["s3:ListBucket"],
-      "Resource": ["arn:aws:s3:::${var.bucket_name}"]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:PutObject",
-        "s3:GetObject",
-        "s3:DeleteObject"
-      ],
-      "Resource": ["arn:aws:s3:::${var.bucket_name}/*"]
-    }
-  ]
-}
-EOF
-}
-
 resource "aws_launch_configuration" "wp_launch_configuration" {
   name_prefix   = "wp-instance-"
-  image_id      = "ami-a4c7edb2"
+  image_id      = "ami-6df1e514"
   instance_type = "t2.medium"
   key_name = "${var.key_name}"
   security_groups = ["${aws_security_group.wp_instance_security_group.id}"]
   associate_public_ip_address = false
   user_data = "${data.template_file.user_data.rendered}"
-  iam_instance_profile = "${aws_iam_instance_profile.wp_iam_profile.name}"
 
   root_block_device {
     volume_size = "50"

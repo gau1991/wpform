@@ -8,7 +8,6 @@ resource "aws_eip" "aws_eip_b" {
 
 resource "aws_vpc" "wp_vpc" {
   cidr_block       = "10.0.0.0/16"
-  instance_tenancy = "dedicated"
 
   tags {
     Name = "WordPress_VPC"
@@ -28,7 +27,7 @@ resource "aws_nat_gateway" "wp_ngw_a" {
 resource "aws_nat_gateway" "wp_ngw_b" {
   allocation_id = "${aws_eip.aws_eip_b.id}"
   subnet_id     = "${aws_subnet.wp_public_subnet_b.id}"
-  depends_on = ["aws_internet_gateway.wp_igw"]
+  depends_on = ["aws_nat_gateway.wp_ngw_a"]
 }
 
 resource "aws_route_table" "wp_public_route_table" {
@@ -101,6 +100,7 @@ resource "aws_subnet" "wp_private_subnet_a" {
   tags {
     Name = "WordPress Private Subnet A"
   }
+  depends_on = ["aws_nat_gateway.wp_ngw_a"]
 }
 
 resource "aws_subnet" "wp_private_subnet_b" {
@@ -112,6 +112,7 @@ resource "aws_subnet" "wp_private_subnet_b" {
   tags {
     Name = "WordPress Private Subnet B"
   }
+  depends_on = ["aws_nat_gateway.wp_ngw_b"]
 }
 
 resource "aws_subnet" "wp_db_subnet_a" {
@@ -123,6 +124,8 @@ resource "aws_subnet" "wp_db_subnet_a" {
   tags {
     Name = "WordPress DB Subnet A"
   }
+  depends_on = ["aws_nat_gateway.wp_ngw_a"]
+
 }
 
 resource "aws_subnet" "wp_db_subnet_b" {
@@ -134,6 +137,7 @@ resource "aws_subnet" "wp_db_subnet_b" {
   tags {
     Name = "WordPress DB Subnet B"
   }
+  depends_on = ["aws_nat_gateway.wp_ngw_b"]
 }
 
 
